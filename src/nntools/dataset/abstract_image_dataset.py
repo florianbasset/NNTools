@@ -45,7 +45,7 @@ class AbstractImageDataset(Dataset, ABC):
     extract_image_id_function: Callable[[str], str] = identity
     recursive_loading: bool = True
     use_cache: bool = False
-    cache_option: Union[NNOpt.CACHE_DISK, NNOpt.CACHE_MEMORY] = field(default=NNOpt.CACHE_DISK, converter=NNOpt)
+    cache_option: Literal[NNOpt.CACHE_DISK, NNOpt.CACHE_MEMORY] = field(default=NNOpt.CACHE_DISK, converter=NNOpt)
     @cache_option.validator
     def _cache_option_validator(self, attribute, value):
         if self.use_cache and value is None:
