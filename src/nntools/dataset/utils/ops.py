@@ -1,8 +1,8 @@
-
 import copy
 import numpy as np
 from torch import default_generator, randperm
 from nntools.dataset.viewer import Viewer
+
 
 def random_split(dataset, lengths, generator=default_generator):
     if sum(lengths) == 1:
@@ -22,7 +22,7 @@ def random_split(dataset, lengths, generator=default_generator):
         d.img_filepath = copy.deepcopy(dataset.img_filepath)
         d.gts = copy.deepcopy(dataset.gts)
         d.composer = copy.deepcopy(dataset.composer)
-        d.ignore_keys  = copy.deepcopy(dataset.ignore_keys)
+        d.ignore_keys = copy.deepcopy(dataset.ignore_keys)
         d.viewer = Viewer(d)
         indx = indices[offset - length : offset]
         d.subset(indx)
@@ -30,6 +30,25 @@ def random_split(dataset, lengths, generator=default_generator):
         if dataset.use_cache:
             d.cache = copy.deepcopy(dataset.cache)
             d.cache.d = d
-            
+
+        datasets.append(d)
+    return tuple(datasets)
+
+
+def split(dataset, indices):
+    datasets = []
+    for split, indx in enumerate(indices):
+        d = copy.deepcopy(dataset)
+        d.img_filepath = copy.deepcopy(dataset.img_filepath)
+        d.gts = copy.deepcopy(dataset.gts)
+        d.composer = copy.deepcopy(dataset.composer)
+        d.ignore_keys = copy.deepcopy(dataset.ignore_keys)
+        d.viewer = Viewer(d)
+        d.subset(indx)
+        d.id = d.id + f"_split_{split}"
+        if dataset.use_cache:
+            d.cache = copy.deepcopy(dataset.cache)
+            d.cache.d = d
+
         datasets.append(d)
     return tuple(datasets)
