@@ -1,5 +1,4 @@
 import logging
-from collections import namedtuple
 from pathlib import Path
 
 import cv2
@@ -9,23 +8,24 @@ from nntools.dataset.cache.abstract_cache import AbstractCache
 from nntools.utils.io import read_image, save_image
 from nntools.utils.misc import is_image
 
+
 class Metadata:
     def __init__(self, cache_folder, is_image):
         self.cache_folder = cache_folder
         self.is_image = is_image
 
+
 class DiskCache(AbstractCache):
-    def __init__(self, dataset, cache_dir:Path='') -> None:
+    def __init__(self, dataset, cache_dir: Path = "") -> None:
         super().__init__(dataset)
-        
+
         self.cache_folders = {}
         self.in_memory_items = []
         self.shms = []
         self.root_cache_folder = None
         self.needs_filling = False
         self.cache_dir = cache_dir
-        
-        
+
     def init_cache(self) -> None:
         if self.is_initialized:
             return
@@ -34,9 +34,9 @@ class DiskCache(AbstractCache):
 
         arrays = self.d.read_from_disk(0)  # Taking the first element
         arrays = self.d.precompose_data(arrays)
-        
+
         self.init_non_shared_items_tracking()
-        
+
         for k, v in arrays.items():
             if not isinstance(v, np.ndarray):
                 assert k in self.d.gts, f"Key {k} not found in dataset ground truths. \
@@ -79,7 +79,7 @@ class DiskCache(AbstractCache):
             else:
                 data[k] = np.load((metadata.cache_folder / name).with_suffix(".npy"))
         return data
-    
+
     def check_cache(self, item):
         name = self.d.filename(item)
         for k, metadata in self.cache_folders.items():
@@ -116,7 +116,7 @@ class DiskCache(AbstractCache):
     def get_cache_folder(self) -> Path:
         root_img = Path(self.d.img_filepath["image"][0]).parent
         folder_name = root_img.name
-        cache_folder = root_img.parent / self.cache_dir / f".{folder_name}_cache" / self.d.id
+        cache_folder = root_img.parent / self.cache_dir / f".{folder_name}_cache" / self.d.id / self.d.composer.id
         return cache_folder
 
     def remap(self, old_key: str, new_key: str):

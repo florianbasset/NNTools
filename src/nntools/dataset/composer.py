@@ -28,6 +28,11 @@ class Composition:
     def __init__(self):
         self.ops = []
         self._index_bullet = 0
+        self._id = ""
+
+    @property
+    def id(self):
+        return self._id
 
     def add(self, *funcs):
         for f in funcs:

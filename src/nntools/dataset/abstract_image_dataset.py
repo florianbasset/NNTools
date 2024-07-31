@@ -46,13 +46,14 @@ class AbstractImageDataset(Dataset, ABC):
     recursive_loading: bool = True
     use_cache: bool = False
     cache_option: Literal[NNOpt.CACHE_DISK, NNOpt.CACHE_MEMORY] = field(default=NNOpt.CACHE_DISK, converter=NNOpt)
+
     @cache_option.validator
     def _cache_option_validator(self, attribute, value):
         if self.use_cache and value is None:
             raise ValueError("cache_option cannot be None if use_cache is True")
-            
-    cache_dir: Optional[Path] = field(default='')
-            
+
+    cache_dir: Optional[Path] = field(default="")
+
     flag: AllowedImreadFlags = cv2.IMREAD_UNCHANGED
     return_indices: bool = False
     multiplicative_size_factor: float = 1
@@ -88,7 +89,7 @@ class AbstractImageDataset(Dataset, ABC):
             raise ValueError("auto_resize cannot be True if shape is None")
 
     _precache_composer: Optional[Composition] = field(default=None)
-    _composer = None       
+    _composer = Composition()
 
     def __attrs_post_init__(self):
         self.ignore_keys = []
@@ -188,12 +189,12 @@ class AbstractImageDataset(Dataset, ABC):
             return [os.path.basename(f) for f in filepaths]
         else:
             return os.path.basename(filepaths)
-    
+
     def get_item_by_name(self, name: str, key: str = "image"):
         filenames = self.filenames[key]
         index = filenames.index(name)
         return self.__getitem__(index)
-        
+
     def subset(self, indices: List[int]):
         for k, files in self.img_filepath.items():
             self.img_filepath[k] = files[indices]
