@@ -164,11 +164,14 @@ class AbstractImageDataset(Dataset, ABC):
 
     def load_array(self, item: int):
         if not self.use_cache:
-            data = self.read_from_disk(item)
-            return self.precompose_data(data)
+            return self.get_precache_data(item)
         else:
             self.cache.init_cache()
             return self.cache[item]
+
+    def get_precache_data(self, item):
+        data = self.read_from_disk(item)
+        return self.precompose_data(data)
 
     def columns(self):
         return (self.img_filepath.keys(), self.gts.keys())

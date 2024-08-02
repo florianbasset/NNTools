@@ -16,10 +16,14 @@ def read_image(filepath, flag=None):
     else:
         return image
 
-def save_image(image, filepath):
-    if image.ndim == 3:
+
+def save_image(image, filepath, invert_channels=True):
+    if image.ndim == 3 and invert_channels:
         image = image[:, :, ::-1]
-    cv2.imwrite(filepath, image)
+    success = cv2.imwrite(filepath, image)
+    if not success:
+        raise ValueError(f"Could not save image at {filepath}")
+
 
 def load_yaml(yaml_path):
     with open(yaml_path) as f:
@@ -72,7 +76,6 @@ def get_most_recent_file(dirpath, filtername=None):
 
 
 def jit_load(project_folder, experiment, run_name, run_id, filename=None, filtername="best"):
-
     folder_path = os.path.join(project_folder, experiment, run_name, "trained_model", run_id)
     script_path = os.path.join(folder_path, "model_scripted.pth")
     if not os.path.exists(script_path):
@@ -86,6 +89,7 @@ def jit_load(project_folder, experiment, run_name, run_id, filename=None, filter
 
     model.load(path, load_most_recent=filename is None, filtername=filtername)
     return model
+
 
 def list_files_in_folder(folder, recursive=True):
     files = []

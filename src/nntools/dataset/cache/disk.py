@@ -6,13 +6,14 @@ import numpy as np
 
 from nntools.dataset.cache.abstract_cache import AbstractCache
 from nntools.utils.io import read_image, save_image
-from nntools.utils.misc import is_image
+from nntools.utils.misc import can_be_stored_as_image, convert_to_image, is_image, revert_image_to_original_dtype
 
 
 class Metadata:
-    def __init__(self, cache_folder, is_image):
+    def __init__(self, cache_folder, is_image, can_be_stored_as_image):
         self.cache_folder = cache_folder
         self.is_image = is_image
+        self.can_be_stored_as_image = can_be_stored_as_image
 
 
 class DiskCache(AbstractCache):
@@ -32,8 +33,7 @@ class DiskCache(AbstractCache):
         self.root_cache_folder = self.get_cache_folder()
         self.root_cache_folder = self.root_cache_folder
 
-        arrays = self.d.read_from_disk(0)  # Taking the first element
-        arrays = self.d.precompose_data(arrays)
+        arrays = self.d.get_precache_data(0)  # Initialization is based on the first element of the dataset
 
         self.init_non_shared_items_tracking()
 
@@ -44,7 +44,7 @@ class DiskCache(AbstractCache):
                 self.in_memory_items.append(k)
             else:
                 k_cache_folder = self.root_cache_folder / k
-                metadata = Metadata(k_cache_folder, is_image(v))
+                metadata = Metadata(k_cache_folder, is_image(v), can_be_stored_as_image(v))
                 self.cache_folders[k] = metadata
 
         self.is_item_cached[:] = False
@@ -76,6 +76,9 @@ class DiskCache(AbstractCache):
         for k, metadata in self.cache_folders.items():
             if metadata.is_image:
                 data[k] = read_image(str((metadata.cache_folder / name).with_suffix(".jpg")), cv2.IMREAD_UNCHANGED)
+            elif metadata.can_be_stored_as_image:
+                cached = cv2.imread(str((metadata.cache_folder / name).with_suffix(".png")), cv2.IMREAD_UNCHANGED)
+                data[k] = revert_image_to_original_dtype(cached, metadata.can_be_stored_as_image)
             else:
                 data[k] = np.load((metadata.cache_folder / name).with_suffix(".npy"))
         return data
@@ -85,6 +88,9 @@ class DiskCache(AbstractCache):
         for k, metadata in self.cache_folders.items():
             if metadata.is_image:
                 if not (metadata.cache_folder / Path(name).with_suffix(".jpg")).exists():
+                    return False
+            elif metadata.can_be_stored_as_image:
+                if not (metadata.cache_folder / Path(name).with_suffix(".png")).exists():
                     return False
             else:
                 if not (metadata.cache_folder / Path(name).with_suffix(".npy")).exists():
@@ -110,13 +116,16 @@ class DiskCache(AbstractCache):
         filepath: Path = self.cache_folders[key].cache_folder / str(name)
         if self.cache_folders[key].is_image:
             save_image(value, str(filepath.with_suffix(".jpg")))
+        elif self.cache_folders[key].can_be_stored_as_image:
+            item = convert_to_image(value, value.dtype)
+            save_image(item, str(filepath.with_suffix(".png")), invert_channels=False)
         else:
             np.save(filepath.with_suffix(".npy"), value)
 
     def get_cache_folder(self) -> Path:
         root_img = Path(self.d.img_filepath["image"][0]).parent
         folder_name = root_img.name
-        cache_folder = root_img.parent / self.cache_dir / f".{folder_name}_cache" / self.d.id / self.d.composer.id
+        cache_folder = root_img.parent / f".{folder_name}_cache" / self.cache_dir / self.d.id / self.d.composer.id
         return cache_folder
 
     def remap(self, old_key: str, new_key: str):
