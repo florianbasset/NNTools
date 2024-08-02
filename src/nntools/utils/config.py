@@ -99,6 +99,9 @@ class Config:
     def __delitem__(self, key):
         del self.keys_dict[key]
 
+    def __contains__(self, item):
+        return item in self.keys_dict
+
     def __repr__(self):
         return pprint.pformat(self.keys_dict)
 
