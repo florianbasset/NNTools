@@ -55,6 +55,7 @@ class SegmentationDataset(AbstractImageDataset):
             self.img_filepath["image"].extend(filepaths)
         if self.use_masks:
             for mask_label, paths in self.mask_root.items():
+                self.on_disk_keys.add(mask_label)
                 for path in paths:
                     if mask_label not in self.gts:
                         self.gts[mask_label] = []

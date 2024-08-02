@@ -72,22 +72,35 @@ class DiskCache(AbstractCache):
 
     def get_cached_item(self, item):
         data = {k: self.d.gts[k][item] for k in self.in_memory_items}
-        name = self.d.filename(item)
         for k, metadata in self.cache_folders.items():
+            if k in self.d.on_disk_keys:
+                name = self.d.filename(item, k)
+            else:
+                name = self.d.filename(item)  # Take the filename of the image
+                name = Path(name).with_suffix(".png")
+
             if metadata.is_image:
-                data[k] = read_image(str((metadata.cache_folder / name).with_suffix(".jpg")), cv2.IMREAD_UNCHANGED)
+                data[k] = read_image(metadata.cache_folder / name, cv2.IMREAD_UNCHANGED)
             elif metadata.can_be_stored_as_image:
-                cached = cv2.imread(str((metadata.cache_folder / name).with_suffix(".png")), cv2.IMREAD_UNCHANGED)
+                cached = read_image((metadata.cache_folder / name).with_suffix(".png"), cv2.IMREAD_UNCHANGED)
+                cached = np.ascontiguousarray(cached)
                 data[k] = revert_image_to_original_dtype(cached, metadata.can_be_stored_as_image)
             else:
                 data[k] = np.load((metadata.cache_folder / name).with_suffix(".npy"))
         return data
 
     def check_cache(self, item):
-        name = self.d.filename(item)
         for k, metadata in self.cache_folders.items():
+            if k in self.d.on_disk_keys:
+                name = self.d.filename(item, k)
+            else:
+                name = self.d.filename(item)  # Take the filename of the image
+                name = Path(name).with_suffix(".png")
+
+            filepath = metadata.cache_folder / Path(name)
+
             if metadata.is_image:
-                if not (metadata.cache_folder / Path(name).with_suffix(".jpg")).exists():
+                if not filepath.exists():
                     return False
             elif metadata.can_be_stored_as_image:
                 if not (metadata.cache_folder / Path(name).with_suffix(".png")).exists():
@@ -112,13 +125,19 @@ class DiskCache(AbstractCache):
         return arrays
 
     def cache_to_disk(self, key, value, item):
-        name = self.d.filename(item)
-        filepath: Path = self.cache_folders[key].cache_folder / str(name)
+        if key in self.d.on_disk_keys:
+            name = Path(self.d.filename(item, key))
+        else:
+            name = self.d.filename(item)
+            name = Path(name).with_suffix(".png")
+
+        filepath: Path = self.cache_folders[key].cache_folder / name
+
         if self.cache_folders[key].is_image:
-            save_image(value, str(filepath.with_suffix(".jpg")))
+            save_image(value, filepath)
         elif self.cache_folders[key].can_be_stored_as_image:
             item = convert_to_image(value, value.dtype)
-            save_image(item, str(filepath.with_suffix(".png")), invert_channels=False)
+            save_image(item, filepath.with_suffix(".png"))
         else:
             np.save(filepath.with_suffix(".npy"), value)
 

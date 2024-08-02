@@ -8,6 +8,7 @@ from nntools.utils.const import supportedExtensions
 
 
 def read_image(filepath, flag=None):
+    filepath = str(filepath)
     if flag is None:
         flag = cv2.IMREAD_UNCHANGED
     image = cv2.imread(filepath, flag)
@@ -18,6 +19,7 @@ def read_image(filepath, flag=None):
 
 
 def save_image(image, filepath, invert_channels=True):
+    filepath = str(filepath)
     if image.ndim == 3 and invert_channels:
         image = image[:, :, ::-1]
     success = cv2.imwrite(filepath, image)

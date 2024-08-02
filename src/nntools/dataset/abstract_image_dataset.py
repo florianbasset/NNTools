@@ -1,7 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
+from typing import Callable, ClassVar, Dict, List, Literal, Optional, Set, Tuple, Union
 
 import cv2
 import matplotlib.pyplot as plt
@@ -90,6 +90,7 @@ class AbstractImageDataset(Dataset, ABC):
 
     _precache_composer: Optional[Composition] = field(default=None)
     _composer = Composition()
+    on_disk_keys: ClassVar[Set[str]] = {"image"}
 
     def __attrs_post_init__(self):
         self.ignore_keys = []

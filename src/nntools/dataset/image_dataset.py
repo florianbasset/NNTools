@@ -21,6 +21,7 @@ class MultiImageDataset(AbstractImageDataset):
         else:
             img_root = {}
             for k, v in self.img_root.items():
+                self.on_disk_keys.add(k)
                 img_root[k] = to_iterable(v)
 
         self.img_filepath = {k: [] for k in img_root.keys()}
