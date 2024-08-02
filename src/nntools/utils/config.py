@@ -96,6 +96,9 @@ class Config:
     def __setitem__(self, key, value):
         self.keys_dict[key] = value
 
+    def __delitem__(self, key):
+        del self.keys_dict[key]
+
     def __repr__(self):
         return pprint.pformat(self.keys_dict)
 
